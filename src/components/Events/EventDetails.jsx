@@ -7,12 +7,12 @@ import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 
 export default function EventDetails() {
-  const { id } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
 
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ['event', { id }],
-    queryFn: ({ signal }) => fetchEvent({ signal, id }),
+    queryKey: ['events', params.id],
+    queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
   const {
     mutate,
@@ -34,21 +34,33 @@ export default function EventDetails() {
   let content;
 
   if (isPending) {
-    content = <LoadingIndicator />;
+    content = (
+      <div id='event-details-content' className='center'>
+        <p>Fetching eventdata...</p>
+      </div>
+    );
   }
 
   if (isError) {
     content = (
-      <ErrorBlock
-        title={'An error occured!'}
-        message={error.info?.message || 'Failed to fetch event data.'}
-      />
+      <div id='event-details-content' className='center'>
+        <ErrorBlock
+          title={'Failed to load event'}
+          message={error.info?.message || 'Failed to fetch event data, please try again later.'}
+        />
+      </div>
     );
   }
 
   if (data) {
+    const formattedDate = new Date(data.date).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
     content = (
-      <article id="event-details">
+      <>
         <header>
           <h1>{data.title}</h1>
           {isDeleting ?
@@ -72,12 +84,12 @@ export default function EventDetails() {
           <div id="event-details-info">
             <div>
               <p id="event-details-location">{data.location}</p>
-              <time dateTime={`Todo-DateT$Todo-Time`}>{data.date} @ {data.time}</time>
+              <time dateTime={`Todo-DateT$Todo-Time`}>{formattedDate} @ {data.time}</time>
             </div>
             <p id="event-details-description">{data.description}</p>
           </div>
         </div>
-      </article>
+      </>
     );
   }
 
@@ -89,7 +101,9 @@ export default function EventDetails() {
           View all Events
         </Link>
       </Header>
-      {content}
+      <article id="event-details">
+        {content}
+      </article>
     </>
   );
 }
