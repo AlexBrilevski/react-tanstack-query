@@ -14,21 +14,19 @@ export default function EventDetails() {
     queryKey: ['events', params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
-  const {
-    mutate,
-    isDeleting = isPending,
-    isDeleteError = isError,
-    deleteError = error
-  } = useMutation({
+
+  const { mutate } = useMutation({
     mutationFn: deleteEvent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({
+        queryKey: ['events'],
+      });
       navigate('/events');
     },
   });
 
   const handleDeleteEvent = () => {
-    mutate({ id });
+    mutate({ id: params.id });
   };
 
   let content;
@@ -63,21 +61,10 @@ export default function EventDetails() {
       <>
         <header>
           <h1>{data.title}</h1>
-          {isDeleting ?
-            <p>Deleting event...</p>
-            : (
-              <nav>
-                <button onClick={handleDeleteEvent}>Delete</button>
-                <Link to="edit">Edit</Link>
-              </nav>
-            )
-          }
-          {isDeleteError && (
-            <ErrorBlock
-              title={'An error occured!'}
-              message={deleteError.info?.message || 'Failed to delete an event.'}
-            />
-          )}
+          <nav>
+            <button onClick={handleDeleteEvent}>Delete</button>
+            <Link to="edit">Edit</Link>
+          </nav>
         </header>
         <div id="event-details-content">
           <img src={`http://localhost:3000/${data.image}`} alt="" />
