@@ -34,7 +34,8 @@ export default function NewEvent() {
                 Create
               </button>
             </>
-          )}
+          )
+        }
       </EventForm>
       {isError && (
         <ErrorBlock
