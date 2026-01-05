@@ -1,17 +1,35 @@
-import { Link, Outlet, useParams } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import Header from '../Header.jsx';
-import { useQuery } from '@tanstack/react-query';
-import { fetchEvent } from '../../util/http.js';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { fetchEvent, deleteEvent, queryClient } from '../../util/http.js';
 import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 
 export default function EventDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['event', { id }],
     queryFn: ({ signal }) => fetchEvent({ signal, id }),
   });
+  const {
+    mutate,
+    isDeleting = isPending,
+    isDeleteError = isError,
+    deleteError = error
+  } = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      navigate('/events');
+    },
+  });
+
+  const handleDeleteEvent = () => {
+    mutate({ id });
+  };
 
   let content;
 
@@ -33,10 +51,21 @@ export default function EventDetails() {
       <article id="event-details">
         <header>
           <h1>{data.title}</h1>
-          <nav>
-            <button>Delete</button>
-            <Link to="edit">Edit</Link>
-          </nav>
+          {isDeleting ?
+            <p>Deleting event...</p>
+            : (
+              <nav>
+                <button onClick={handleDeleteEvent}>Delete</button>
+                <Link to="edit">Edit</Link>
+              </nav>
+            )
+          }
+          {isDeleteError && (
+            <ErrorBlock
+              title={'An error occured!'}
+              message={deleteError.info?.message || 'Failed to delete an event.'}
+            />
+          )}
         </header>
         <div id="event-details-content">
           <img src={`http://localhost:3000/${data.image}`} alt="" />
