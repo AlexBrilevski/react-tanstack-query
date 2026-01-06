@@ -117,7 +117,7 @@ export default function EventDetails() {
               )
             }
           </div>
-          {deleteError && (
+          {isDeleteError && (
             <ErrorBlock
               title={'Failed to delete event'}
               message={deleteError.info?.message || 'Failed to delete event, please try again later.'}
