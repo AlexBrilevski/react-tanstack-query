@@ -2,16 +2,22 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { fetchEvent, queryClient, updateEvent } from '../../util/http.js';
 
-import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 import Modal from '../UI/Modal.jsx';
 import EventForm from './EventForm.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
+
+export const editEventLoader = ({ params }) => {
+  return queryClient.fetchQuery({
+    queryKey: ['events', params.id],
+    queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
+  });
+};
 
 export default function EditEvent() {
   const params = useParams();
   const navigate = useNavigate();
 
-  const { data, isPending, isError, error } = useQuery({
+  const { data, isError, error } = useQuery({
     queryKey: ['events', params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
@@ -45,14 +51,6 @@ export default function EditEvent() {
   }
 
   let content;
-
-  if (isPending) {
-    content = (
-      <div className='center'>
-        <LoadingIndicator />
-      </div>
-    );
-  }
 
   if (isError) {
     content = (
