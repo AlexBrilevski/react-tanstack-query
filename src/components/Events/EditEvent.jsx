@@ -10,6 +10,7 @@ export const editEventLoader = ({ params }) => {
   return queryClient.fetchQuery({
     queryKey: ['events', params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
+    staleTime: 10000,
   });
 };
 
