@@ -1,5 +1,5 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { Link, redirect, useNavigate, useNavigation, useParams, useSubmit } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { fetchEvent, queryClient, updateEvent } from '../../util/http.js';
 
 import Modal from '../UI/Modal.jsx';
@@ -14,37 +14,28 @@ export const editEventLoader = ({ params }) => {
   });
 };
 
+export const editEventAction = async ({ request, params }) => {
+  const formData = await request.formData();
+  const updatedEventData = Object.fromEntries(formData);
+  await updateEvent({ id: params.id, event: updatedEventData });
+  await queryClient.invalidateQueries({ queryKey: ['events'] });
+
+  return redirect('../');
+};
+
 export default function EditEvent() {
   const params = useParams();
+  const submit = useSubmit();
   const navigate = useNavigate();
+  const { state } = useNavigation();
 
   const { data, isError, error } = useQuery({
     queryKey: ['events', params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
 
-  const { mutate } = useMutation({
-    mutationFn: updateEvent,
-    onMutate: async (data) => {
-      const newEvent = data.event;
-
-      await queryClient.cancelQueries({ queryKey: ['events', params.id] });
-      const previousEvent = queryClient.getQueryData(['events', params.id]);
-      queryClient.setQueryData(['events', params.id], newEvent);
-
-      return { previousEvent };
-    },
-    onError: (error, data, context) => {
-      queryClient.setQueryData(['events', params.id], context.previousEvent);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['events', params.id] });
-    },
-  });
-
   function handleSubmit(formData) {
-    mutate({ id: params.id, event: formData });
-    navigate('../');
+    submit(formData, { method: 'PUT' });
   }
 
   function handleClose() {
@@ -72,12 +63,18 @@ export default function EditEvent() {
   if (data) {
     content = (
       <EventForm inputData={data} onSubmit={handleSubmit}>
-        <Link to="../" className="button-text">
-          Cancel
-        </Link>
-        <button type="submit" className="button">
-          Update
-        </button>
+        {state === 'submitting' ? (
+          <p>Sending data...</p>
+        ) : (
+          <>
+            <Link to="../" className="button-text">
+              Cancel
+            </Link>
+            <button type="submit" className="button">
+              Update
+            </button>
+          </>
+        )}
       </EventForm>
     );
   }
